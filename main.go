@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"sync"
+	"time"
 )
 
 var conferenceName = "Go Conference"
@@ -17,27 +19,32 @@ type UserData struct {
 
 const conferenceTickets int = 50
 
+var wg = sync.WaitGroup{}
+
 func main() {
 
 	greetUser()
 
-	for {
-		firstName, lastName, email, userTicket := getUserInput()
-		isValidName, isValidEmail, isValidTicketNumber := validateInputValues(firstName, lastName, email, userTicket)
+	//for {
+	firstName, lastName, email, userTicket := getUserInput()
+	isValidName, isValidEmail, isValidTicketNumber := validateInputValues(firstName, lastName, email, userTicket)
 
-		if isValidName && isValidEmail && isValidTicketNumber {
-			bookingLogic(firstName, lastName, email, userTicket)
-			printFirstName()
+	if isValidName && isValidEmail && isValidTicketNumber {
+		bookingLogic(firstName, lastName, email, userTicket)
+		wg.Add(1)
+		go sendTicket(userTicket, firstName, lastName, email)
+		printFirstName()
 
-			if remainingTickets == 0 {
-				fmt.Println("Our conference is booked out. Come back next year.....")
-			}
-		} else {
-			fmt.Printf("Your input value is in valid. Try Again")
-
+		if remainingTickets == 0 {
+			fmt.Println("Our conference is booked out. Come back next year.....")
 		}
+	} else {
+		fmt.Printf("Your input value is in valid. Try Again")
 
 	}
+	wg.Wait()
+
+	// }
 
 }
 
@@ -88,4 +95,14 @@ func bookingLogic(firstName string, lastName string, email string, userTicket ui
 	remainingTickets -= userTicket
 	fmt.Printf("user %v %v booked %v tickets. and sent confirmation email to %v \n", firstName, lastName, userTicket, email)
 	fmt.Printf("%v tickets remaining for %v \n", remainingTickets, conferenceName)
+}
+
+func sendTicket(userTickets uint, firstName string, lastName string, email string) {
+
+	time.Sleep(10 * time.Second)
+	var tickets = fmt.Sprintf("%v tickets for %v %v", userTickets, firstName, lastName)
+	fmt.Println("##################")
+	fmt.Printf("Sending ticket:\n %v to email address %v \n", tickets, email)
+	fmt.Println("#################")
+	wg.Done()
 }
